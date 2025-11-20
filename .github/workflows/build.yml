@@ -1,0 +1,94 @@
+name: Build pgModeler (macOS + Windows)
+
+on:
+  push:
+    branches: [ develop, main ]
+  pull_request:
+    branches: [ develop, main ]
+
+jobs:
+  macos-build:
+    name: macOS Build
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Qt 6
+        uses: lukka/get-qt@v4
+        with:
+          version: '6.4.0'
+          host: 'mac'
+
+      - name: Configure (CMake)
+        run: |
+          cmake -S . -B cmake-build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: |
+          cmake --build cmake-build --config Release -- -j
+      - name: Install
+        run: |
+          INSTALL_DIR="$GITHUB_WORKSPACE/install"
+          cmake --install cmake-build --prefix "$INSTALL_DIR"
+          ls -la "$INSTALL_DIR"
+
+      - name: Create DMG
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          # Package the installed folder into a compressed DMG
+          hdiutil create -volname "pgModeler" -srcfolder "$GITHUB_WORKSPACE/install" -ov -format UDZO "$GITHUB_WORKSPACE/out/pgmodeler-macos.dmg"
+          ls -lh "$GITHUB_WORKSPACE/out/pgmodeler-macos.dmg"
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pgmodeler-macos
+          path: |
+            cmake-build
+            out/pgmodeler-macos.dmg
+
+  windows-build:
+    name: Windows Build
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Qt 6
+        uses: lukka/get-qt@v4
+        with:
+          version: '6.4.0'
+          host: 'windows'
+
+      - name: Configure (CMake)
+        run: |
+          cmake -S . -B cmake-build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: |
+          cmake --build cmake-build --config Release -- /m
+
+      - name: Install (PowerShell)
+        shell: pwsh
+        run: |
+          $install = Join-Path $env:RUNNER_TEMP 'install'
+          cmake --install cmake-build --prefix $install
+          Write-Host "Installed to $install"
+
+      - name: Create ZIP (PowerShell)
+        shell: pwsh
+        run: |
+          $install = Join-Path $env:RUNNER_TEMP 'install'
+          $zip = Join-Path $PWD 'pgmodeler-windows.zip'
+          if(Test-Path $zip) { Remove-Item $zip }
+          Compress-Archive -Path (Join-Path $install '*') -DestinationPath $zip
+          Write-Host "Created $zip"
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pgmodeler-windows
+          path: |
+            cmake-build
+            pgmodeler-windows.zip

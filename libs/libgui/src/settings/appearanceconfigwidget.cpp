@@ -30,6 +30,15 @@
 #include <QButtonGroup>
 #include <QToolTip>
 #include <qcursor.h>
+// Provide a fallback alias for QPalette::Accent when building with Qt versions
+// that don't define it (older Qt6 releases). Use Link as a reasonable fallback.
+#include <QtGlobal>
+
+#if QT_VERSION >= QT_VERSION_CHECK(6,5,0)
+constexpr QPalette::ColorRole PGM_PALETTE_ACCENT = QPalette::Accent;
+#else
+constexpr QPalette::ColorRole PGM_PALETTE_ACCENT = QPalette::Link;
+#endif
 
 std::map<QString, QPalette> AppearanceConfigWidget::theme_palettes;
 std::map<QString, attribs_map> AppearanceConfigWidget::config_params;
@@ -371,7 +380,7 @@ void AppearanceConfigWidget::loadThemesConfiguration()
 			pal.setColor(cl_group, QPalette::Midlight, pal.color(cl_group, QPalette::Mid));
 			pal.setColor(cl_group, QPalette::Mid, pal.color(cl_group, QPalette::Midlight));
 			pal.setColor(cl_group, QPalette::Dark, light_cl);
-			pal.setColor(cl_group, QPalette::Accent, pal.color(cl_group, QPalette::Highlight).lighter(CustomUiStyle::MinFactor));
+			pal.setColor(cl_group, PGM_PALETTE_ACCENT, pal.color(cl_group, QPalette::Highlight).lighter(CustomUiStyle::MinFactor));
 		}
 	}
 	else
@@ -391,9 +400,9 @@ void AppearanceConfigWidget::loadThemesConfiguration()
 			pal.setColor(QPalette::Disabled, rl_id, cl.darker(CustomUiStyle::XMinFactor));
 		}
 
-		pal.setColor(QPalette::Active, QPalette::Accent, pal.color(QPalette::Active, QPalette::Highlight));
-		pal.setColor(QPalette::Inactive, QPalette::Accent, pal.color(QPalette::Inactive, QPalette::Highlight));
-		pal.setColor(QPalette::Disabled, QPalette::Accent, pal.color(QPalette::Disabled, QPalette::Highlight).darker(CustomUiStyle::MinFactor));
+		pal.setColor(QPalette::Active, PGM_PALETTE_ACCENT, pal.color(QPalette::Active, QPalette::Highlight));
+		pal.setColor(QPalette::Inactive, PGM_PALETTE_ACCENT, pal.color(QPalette::Inactive, QPalette::Highlight));
+		pal.setColor(QPalette::Disabled, PGM_PALETTE_ACCENT, pal.color(QPalette::Disabled, QPalette::Highlight).darker(CustomUiStyle::MinFactor));
 	}
 
 	theme_palettes[Attributes::System] = pal;
@@ -414,7 +423,7 @@ void AppearanceConfigWidget::loadThemesConfiguration()
 								{Attributes::Link, QPalette::Link}, {Attributes::LinkVisited, QPalette::LinkVisited},
 								{Attributes::AlternateBase, QPalette::AlternateBase}, {Attributes::ToolTipBase, QPalette::ToolTipBase},
 								{Attributes::ToolTipText, QPalette::ToolTipText}, {Attributes::PlaceholderText, QPalette::PlaceholderText},
-								{Attributes::Accent, QPalette::Accent}};
+								{Attributes::Accent, PGM_PALETTE_ACCENT}};
 
 	static const std::map<QString, QList<CustomTableWidget::TableItemColor>> tab_item_ids{
 					{ Attributes::ProtItem, { CustomTableWidget::ProtItemBgColor, CustomTableWidget::ProtItemFgColor } },
